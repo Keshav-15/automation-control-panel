@@ -6,28 +6,31 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.10.0 <4.0.0"
+  sdk: ">=3.9.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  intl: ^0.20.2                  # For Date Conversion
-  provider: ^6.1.2               # Provider For State Management
-  dio: ^5.4.1                    # For Network API Calling
-  shared_preferences: ^2.2.2    # To Stored Data in Local Storage
-  connectivity_plus: ^7.0.0      # To Check Network Connectivity
-  get_it: ^9.2.0                 # For Accessing Service Objects
-  shimmer: ^3.0.0                # For Skeleton View
-  image_picker: ^1.0.7           # To Pick Image From Camera and Gallery
-  app_settings: ^7.0.0           # To Open App Settings
-  device_info_plus: ^12.3.0       # To Get Device Info
-  file_picker: ^10.3.7            # To Pick Media Files From Device
-  cached_network_image: ^3.3.1   # For Image Caching
-  json_annotation: ^4.8.1        # For Json Conversion
-  flutter_dotenv: ^6.0.0         # To Store variables in env file
+  intl: ^0.20.2 # For Date Conversion
+  provider: ^6.1.2 # Provider For State Management
+  dio: ^5.4.1 # For Network API Calling
+  shared_preferences: ^2.2.2 # To Stored Data in Local Storage
+  connectivity_plus: ^7.0.0 # To Check Network Connectivity
+  get_it: ^9.2.0 # For Accessing Service Objects
+  shimmer: ^3.0.0 # For Skeleton View
+  image_picker: ^1.0.7 # To Pick Image From Camera and Gallery
+  app_settings: ^7.0.0 # To Open App Settings
+  device_info_plus: ^12.3.0 # To Get Device Info
+  file_picker: ^10.3.7 # To Pick Media Files From Device
+  cached_network_image: ^3.3.1 # For Image Caching
+  json_annotation: ^4.8.1 # For Json Conversion
+  flutter_dotenv: ^6.0.0 # To Store variables in env file
   rxdart: ^0.28.0
   socket_io_client: ^3.1.3
+  yaml: ^3.1.2 # To parse manifest YAML
+  path: ^1.9.0 # Path manipulation utilities
+  path_provider: ^2.1.3 # App support directory for project JSON store
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +38,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   json_serializable: ^6.0.1
   build_runner: ^2.1.5
+  path_provider_platform_interface: ^2.1.2 # Fake app-support dir in ReportArchiver tests
 
 flutter:
   uses-material-design: true
@@ -44,6 +48,7 @@ flutter:
     - .env.dev
     - .env.stage
     - .env.prod
+    - manifests/centurion.yaml
 
   fonts:
     - family: Poppins

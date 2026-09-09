@@ -89,6 +89,16 @@ String getConvertedDate(
   }
 }
 
+/// "just now" / "5m ago" / "3h ago" / "2d ago" — used by the QA Control
+/// Center's run history (Phase 5) rather than a full date/time string.
+String timeAgo(DateTime time) {
+  final diff = DateTime.now().difference(time);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  return '${diff.inDays}d ago';
+}
+
 // convert date from API response to app time format
 String getConvertedTime(
   String dateString, {

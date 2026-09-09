@@ -1,35 +1,63 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Development",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/dev/main_dev.dart",
-            "args": [
-                "--flavor",
-                "development"
-            ]
-        },
-        {
-            "name": "Stage",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/stage/main_stage.dart",
-            "args": [
-                "--flavor",
-                "stage"
-            ]
-        },
-        {
-            "name": "Prod",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/prod/main_prod.dart",
-            "args": [
-                "--flavor",
-                "production"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // QA Control Center — primary run configuration (macOS desktop)
+      // v1: development only. No stage/prod builds of this tool.
+      "name": "QA Control Center (macOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/dev/main_dev.dart",
+      "deviceId": "macos",
+      // Editors launched from Dock/Spotlight inherit launchd's minimal
+      // environment, not a shell's .zprofile — two separate problems for
+      // CocoaPods here: (1) PATH lacks Homebrew's bin dir, so `pod` isn't
+      // found at all (Flutter reports this as "CocoaPods not installed");
+      // (2) with no LANG/LC_ALL set, CocoaPods' Ruby crashes on
+      // unicode_normalize during an actual `pod install`.
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${env:PATH}",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8"
+      }
+    },
+
+    // ── Mobile boilerplate configs (kept for reference) ───────────────
+    {
+      "name": "Development (mobile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/dev/main_dev.dart",
+      "args": ["--flavor", "development"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${env:PATH}",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8"
+      }
+    },
+    {
+      "name": "Stage (mobile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/stage/main_stage.dart",
+      "args": ["--flavor", "stage"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${env:PATH}",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8"
+      }
+    },
+    {
+      "name": "Prod (mobile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/prod/main_prod.dart",
+      "args": ["--flavor", "production"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:${env:PATH}",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8"
+      }
+    }
+  ]
 }
