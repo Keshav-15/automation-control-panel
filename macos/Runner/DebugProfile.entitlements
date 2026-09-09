@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  QA Control Center — internal tool, NOT distributed via App Store.
+	  Sandbox is intentionally disabled so the app can:
+	    • spawn login-shell child processes (git, flutter, npm, yarn, etc.)
+	    • access sibling git repos anywhere on disk
+	    • read/write Allure reports
+	  Never re-enable the sandbox without verifying all shell calls still work.
+
+	  com.apple.security.files.user-selected.read-write is required by the
+	  file_picker plugin even when the sandbox is off — it checks for the key
+	  explicitly and throws ENTITLEMENT_NOT_FOUND if neither read-only nor
+	  read-write is present.
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>

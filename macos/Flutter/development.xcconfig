@@ -1,0 +1,4 @@
+// QA Control Center — development configuration
+// v1 runs the control center in this configuration only.
+// No stage/prod builds of this tool in v1.
+#include "Flutter-Debug.xcconfig"
