@@ -1,0 +1,111 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Development APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "apk",
+        "--flavor",
+        "development",
+        "-t",
+        "lib/dev/main_dev.dart"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Build Stage APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "apk",
+        "--flavor",
+        "stage",
+        "-t",
+        "lib/stage/main_stage.dart"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build Production APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "apk",
+        "--flavor",
+        "production",
+        "-t",
+        "lib/prod/main_prod.dart"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build Production App Bundle",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "appbundle",
+        "--flavor",
+        "production",
+        "-t",
+        "lib/prod/main_prod.dart",
+        "android-arm",
+        "android-arm64",
+        "android-x64"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Generate Model Files",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "build_runner",
+        "watch",
+        "--delete-conflicting-outputs"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Install Pods",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd ios && rm -rf Pods && rm -rf Podfile.lock && rm -rf .symlinks && pod install --repo-update && cd .."
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Clear All Data",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "flutter clean && flutter pub cache clean && flutter pub get && cd ios && rm -rf Pods && rm -rf Podfile.lock && rm -rf .symlinks && pod install && cd .."
+      ],
+      "group": {
+        "kind": "build"
+      }
+    }
+  ]
+}

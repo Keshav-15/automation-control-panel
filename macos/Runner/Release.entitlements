@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  QA Control Center — internal tool, NOT distributed via App Store.
+	  Sandbox intentionally disabled. See DebugProfile.entitlements for full rationale.
+
+	  com.apple.security.files.user-selected.read-write is required by file_picker
+	  even when the sandbox is off.
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>
