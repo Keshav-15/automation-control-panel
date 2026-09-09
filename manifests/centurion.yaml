@@ -1,0 +1,286 @@
+product: centurion
+environment: dev  # v1: dev only — stage/prod are post-v1
+
+# ── Repo roles ────────────────────────────────────────────────────────────────
+# rel_path is relative to the Projects root the user picks in Setup.
+repos:
+  app:
+    rel_path: crichq-app-flutter
+    branch: develop
+  web:
+    rel_path: crichq-webapp-nextjs
+    branch: develop
+  mobile_tests:
+    rel_path: centurion-app-automation-tests-ts
+    branch: develop
+
+# ── Recipes ───────────────────────────────────────────────────────────────────
+# Step fields:
+#   id              — unique key used in logs and context file
+#   name            — human label shown in the log panel
+#   command         — shell command; ${VAR} resolved from env_file by the engine
+#   repo            — key from repos above; cwd = that repo's absolute path
+#   target          — (iOS only) "simulator" | "device"; absent = always runs
+#   env_file        — path relative to projects root; vars merged into step's env
+#   skip_if_no_sync   — omit when Sync toggle is off
+#   skip_if_no_build  — omit when Build+Install toggle is off (mobile only)
+#   detach          — fire-and-forget (for `allure open`)
+#   timeout_seconds — kill if exceeded
+#   check_appium    — re-check localhost:4723/status right before this step; abort if gone
+#   spec_command    — (Phase 6) alternate command, used only when the user typed something
+#                     into the recipe's spec/flags field; {flags} is replaced with that raw
+#                     text verbatim (the user is responsible for quoting it, same as if they'd
+#                     typed it into a terminal themselves — this app has no other user).
+#                     Needed wherever `command` is an opaque multi-command chain (e.g. `yarn test`)
+#                     that CLI-arg forwarding can't safely reach — see spec_command on test_web.
+recipes:
+
+  # ── Web ─────────────────────────────────────────────────────────────────────
+  # Toolchain: Node ≥22, Yarn, Playwright, Allure CLI
+  # `yarn test` = allure:clean + playwright:clean + env-cmd(.env.dev .env.test)
+  #               playwright test + allure:generate  ← all in one, do not duplicate
+  web:
+    name: Web Tests
+    surface: web
+    steps:
+      - id: sync_web
+        name: Sync — web repo
+        command: git pull origin develop
+        repo: web
+        skip_if_no_sync: true
+
+      - id: install_web
+        name: Install dependencies
+        command: yarn install --frozen-lockfile
+        repo: web
+
+      - id: test_web
+        name: Run Playwright tests + generate Allure report
+        command: yarn test
+        repo: web
+        timeout_seconds: 600
+        # `yarn test` is a 4-command chain (see comment above) — appending
+        # `-- --grep foo` to it would land on the LAST command (allure:generate),
+        # not on `playwright test`. So a spec filter reconstructs the chain
+        # directly instead, with the flag on the actual playwright invocation.
+        spec_command: >-
+          npm run allure:clean && npm run playwright:clean &&
+          env-cmd -f .env.dev env-cmd -f .env.test playwright test {flags} &&
+          npm run allure:generate
+
+      - id: allure_open_web
+        name: Open Allure report
+        command: yarn allure:open
+        repo: web
+        detach: true
+
+  # ── iOS ─────────────────────────────────────────────────────────────────────
+  # Toolchain: Flutter, xcrun simctl (simulator) OR xcrun devicectl (device),
+  #            Node ≥20, npm, Appium @ 4723, allure-commandline
+  #
+  # Steps tagged  target: simulator  run only when the UI toggle is "Simulator".
+  # Steps tagged  target: device     run only when the UI toggle is "Real Device".
+  # Steps with no target tag run for both.
+  #
+  # WDIO configs:
+  #   Simulator → wdio.ios.simulator.conf.ts  (reads IOS_SIMULATOR_UDID)
+  #   Device    → wdio.ios.conf.ts            (reads IOS_DEVICE_ID, needs Xcode signing)
+  ios:
+    name: iOS Tests
+    surface: ios
+    steps:
+      # ── Sync (shared) ──────────────────────────────────────────────────────
+      - id: sync_app_ios
+        name: Sync — app repo
+        command: git pull origin develop
+        repo: app
+        skip_if_no_sync: true
+
+      - id: sync_tests_ios
+        name: Sync — mobile tests repo
+        command: git pull origin develop
+        repo: mobile_tests
+        skip_if_no_sync: true
+
+      # ── Build — simulator ──────────────────────────────────────────────────
+      - id: build_ios_simulator
+        name: Build iOS simulator app (dev, debug)
+        target: simulator
+        # --simulator produces iphonesimulator/Runner.app; no code-signing needed
+        command: >-
+          flutter build ios
+          --flavor development
+          -t lib/dev/main_dev.dart
+          --simulator
+          --debug
+        repo: app
+        skip_if_no_build: true
+        timeout_seconds: 900
+
+      - id: install_ios_simulator
+        name: Install app on simulator
+        target: simulator
+        # IOS_SIMULATOR_UDID is read from mobile_tests/.env.dev by the engine
+        command: xcrun simctl install "${IOS_SIMULATOR_UDID}" build/ios/iphonesimulator/Runner.app
+        repo: app
+        env_file: centurion-app-automation-tests-ts/.env.dev
+        skip_if_no_build: true
+
+      - id: launch_ios_simulator
+        name: Launch app on simulator
+        target: simulator
+        command: xcrun simctl launch "${IOS_SIMULATOR_UDID}" com.goa.app.dev
+        repo: app
+        env_file: centurion-app-automation-tests-ts/.env.dev
+        skip_if_no_build: true
+
+      # ── Build — real device ────────────────────────────────────────────────
+      - id: build_ios_device
+        name: Build iOS device app (dev)
+        target: device
+        # Requires IOS_XCODE_ORG_ID + IOS_XCODE_SIGNING_IDENTITY in .env.dev
+        command: >-
+          flutter build ios
+          --flavor development
+          -t lib/dev/main_dev.dart
+        repo: app
+        skip_if_no_build: true
+        timeout_seconds: 900
+
+      - id: install_ios_device
+        name: Install app on device (devicectl)
+        target: device
+        # IOS_DEVICE_ID is read from mobile_tests/.env.dev by the engine
+        command: >-
+          xcrun devicectl device install app
+          --device "${IOS_DEVICE_ID}"
+          build/ios/iphoneos/Runner.app
+        repo: app
+        env_file: centurion-app-automation-tests-ts/.env.dev
+        skip_if_no_build: true
+
+      - id: launch_ios_device
+        name: Launch app on device
+        target: device
+        command: >-
+          xcrun devicectl device process launch
+          --device "${IOS_DEVICE_ID}"
+          com.goa.app.dev
+        repo: app
+        env_file: centurion-app-automation-tests-ts/.env.dev
+        skip_if_no_build: true
+
+      # ── Test dependencies + clean (shared) ────────────────────────────────
+      - id: install_deps_ios
+        name: Install test dependencies (npm ci)
+        command: npm ci
+        repo: mobile_tests
+
+      - id: clean_allure_ios
+        name: Clean previous Allure results
+        # Always clean → single-run pool → no timestamp-filter workaround needed
+        command: rm -rf allure-results allure-report
+        repo: mobile_tests
+
+      # ── Test — simulator ───────────────────────────────────────────────────
+      - id: test_ios_simulator
+        name: Run WDIO iOS simulator tests (dev)
+        target: simulator
+        # Uses wdio.ios.simulator.conf.ts (reads IOS_SIMULATOR_UDID, no Xcode signing)
+        command: ENV_FILE=.env.dev npx wdio run wdio.ios.simulator.conf.ts
+        repo: mobile_tests
+        timeout_seconds: 1800
+        # Doctor checked Appium before Run was enabled, but Build+Install can run
+        # for minutes first — re-check right before the step that actually needs it.
+        check_appium: true
+        # e.g. --spec test/specs/login.e2e.ts  or  --mochaOpts.grep "@smoke"
+        spec_command: ENV_FILE=.env.dev npx wdio run wdio.ios.simulator.conf.ts {flags}
+
+      # ── Test — real device ─────────────────────────────────────────────────
+      - id: test_ios_device
+        name: Run WDIO iOS device tests (dev)
+        target: device
+        # Uses wdio.ios.conf.ts (reads IOS_DEVICE_ID, xcodeOrgId, xcodeSigningId)
+        command: npm run test:ios:dev
+        repo: mobile_tests
+        timeout_seconds: 1800
+        check_appium: true
+        spec_command: ENV_FILE=.env.dev npx wdio run wdio.ios.conf.ts {flags}
+
+      # ── Report (shared) ────────────────────────────────────────────────────
+      - id: allure_generate_ios
+        name: Generate Allure report
+        command: npm run report:generate
+        repo: mobile_tests
+
+      - id: allure_open_ios
+        name: Open Allure report
+        command: npm run report:open
+        repo: mobile_tests
+        detach: true
+
+  # ── Android ─────────────────────────────────────────────────────────────────
+  # Toolchain: Flutter, adb, Node ≥20, npm, Appium @ 4723, allure-commandline
+  # v1: device only (no Android emulator target distinction in v1)
+  android:
+    name: Android Tests
+    surface: android
+    steps:
+      - id: sync_app_android
+        name: Sync — app repo
+        command: git pull origin develop
+        repo: app
+        skip_if_no_sync: true
+
+      - id: sync_tests_android
+        name: Sync — mobile tests repo
+        command: git pull origin develop
+        repo: mobile_tests
+        skip_if_no_sync: true
+
+      - id: build_android
+        name: Build Android debug APK (dev flavor)
+        command: >-
+          flutter build apk
+          --flavor development
+          -t lib/dev/main_dev.dart
+          --debug
+        repo: app
+        skip_if_no_build: true
+        timeout_seconds: 900
+
+      - id: install_android
+        name: Install APK via adb
+        # Debug flavor output path
+        command: adb install -r build/app/outputs/flutter-apk/app-development-debug.apk
+        repo: app
+        skip_if_no_build: true
+
+      - id: install_deps_android
+        name: Install test dependencies (npm ci)
+        command: npm ci
+        repo: mobile_tests
+
+      - id: clean_allure_android
+        name: Clean previous Allure results
+        command: rm -rf allure-results allure-report
+        repo: mobile_tests
+
+      - id: test_android
+        name: Run WDIO Android tests (dev)
+        command: npm run test:android:dev
+        repo: mobile_tests
+        timeout_seconds: 1800
+        check_appium: true
+        spec_command: ENV_FILE=.env.dev npx wdio run wdio.android.conf.ts {flags}
+
+      - id: allure_generate_android
+        name: Generate Allure report
+        command: npm run report:generate
+        repo: mobile_tests
+
+      - id: allure_open_android
+        name: Open Allure report
+        command: npm run report:open
+        repo: mobile_tests
+        detach: true

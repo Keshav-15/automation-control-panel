@@ -1,0 +1,90 @@
+[
+  {
+    "id": "sync_web",
+    "name": "Sync — web repo",
+    "command": "git pull origin develop",
+    "repoRole": "web",
+    "skipIfNoSync": true,
+    "category": "setup"
+  },
+  {
+    "id": "install_web",
+    "name": "Install dependencies",
+    "command": "yarn install --frozen-lockfile",
+    "repoRole": "web",
+    "category": "setup"
+  },
+  {
+    "id": "test_web",
+    "name": "Run Playwright tests + generate Allure report",
+    "command": "yarn test",
+    "repoRole": "web",
+    "timeoutSeconds": 600,
+    "specCommand": "npm run allure:clean && npm run playwright:clean && env-cmd -f .env.dev env-cmd -f .env.test playwright test {flags} && npm run allure:generate",
+    "category": "test"
+  },
+  {
+    "id": "allure_open_web",
+    "name": "Open Allure report",
+    "command": "yarn allure:open",
+    "repoRole": "web",
+    "detach": true,
+    "category": "report"
+  },
+
+  {
+    "id": "sync_app_ios",
+    "name": "Sync — app repo",
+    "command": "git pull origin develop",
+    "repoRole": "app",
+    "skipIfNoSync": true,
+    "groupId": "sync_ios",
+    "groupLabel": "Sync (parallel)",
+    "runParallel": true,
+    "category": "setup"
+  },
+  {
+    "id": "sync_tests_ios",
+    "name": "Sync — mobile tests repo",
+    "command": "git pull origin develop",
+    "repoRole": "mobile_tests",
+    "skipIfNoSync": true,
+    "groupId": "sync_ios",
+    "groupLabel": "Sync (parallel)",
+    "runParallel": true,
+    "category": "setup"
+  },
+  {
+    "id": "build_ios_simulator",
+    "name": "Build iOS simulator app (dev, debug)",
+    "command": "flutter build ios --flavor development -t lib/dev/main_dev.dart --simulator --debug",
+    "repoRole": "app",
+    "target": "simulator",
+    "skipIfNoBuild": true,
+    "timeoutSeconds": 900,
+    "category": "build"
+  },
+  {
+    "id": "test_ios_simulator",
+    "name": "Run WDIO iOS simulator tests (dev)",
+    "command": "ENV_FILE=.env.dev npx wdio run wdio.ios.simulator.conf.ts",
+    "repoRole": "mobile_tests",
+    "target": "simulator",
+    "envFile": "centurion-app-automation-tests-ts/.env.dev",
+    "checkAppium": true,
+    "timeoutSeconds": 1800,
+    "specCommand": "ENV_FILE=.env.dev npx wdio run wdio.ios.simulator.conf.ts {flags}",
+    "category": "test"
+  },
+
+  {
+    "id": "test_android",
+    "name": "Run WDIO Android tests (dev)",
+    "command": "npm run test:android:dev",
+    "repoRole": "mobile_tests",
+    "checkAppium": true,
+    "timeoutSeconds": 1800,
+    "specCommand": "ENV_FILE=.env.dev npx wdio run wdio.android.conf.ts {flags}",
+    "category": "test"
+  }
+]

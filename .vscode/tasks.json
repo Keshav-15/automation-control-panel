@@ -1,111 +1,132 @@
 {
   "version": "2.0.0",
   "tasks": [
+
+    // ── QA Control Center (macOS) — primary tasks ──────────────────────────
+
     {
-      "label": "Build Development APK",
+      // Hot-restart run: use this day-to-day while developing the control center.
+      "label": "Run QA Control Center (macOS)",
       "type": "shell",
       "command": "flutter",
       "args": [
-        "build",
-        "apk",
-        "--flavor",
-        "development",
-        "-t",
-        "lib/dev/main_dev.dart"
+        "run",
+        "-d", "macos",
+        "-t", "lib/dev/main_dev.dart"
       ],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$dart-flutter"
     },
+
     {
-      "label": "Build Stage APK",
+      // Release build of the macOS app (for sharing with the team as a .app bundle).
+      "label": "Build QA Control Center (macOS release)",
       "type": "shell",
       "command": "flutter",
       "args": [
-        "build",
-        "apk",
-        "--flavor",
-        "stage",
-        "-t",
-        "lib/stage/main_stage.dart"
+        "build", "macos",
+        "-t", "lib/dev/main_dev.dart"
       ],
       "group": {
         "kind": "build"
-      }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$dart-flutter"
     },
+
     {
-      "label": "Build Production APK",
+      // Fresh dependency fetch — run after pubspec.yaml changes.
+      "label": "flutter pub get",
       "type": "shell",
       "command": "flutter",
-      "args": [
-        "build",
-        "apk",
-        "--flavor",
-        "production",
-        "-t",
-        "lib/prod/main_prod.dart"
-      ],
-      "group": {
-        "kind": "build"
-      }
+      "args": ["pub", "get"],
+      "group": { "kind": "build" },
+      "problemMatcher": []
     },
+
     {
-      "label": "Build Production App Bundle",
+      // Run all unit / widget tests.
+      "label": "flutter test",
       "type": "shell",
       "command": "flutter",
-      "args": [
-        "build",
-        "appbundle",
-        "--flavor",
-        "production",
-        "-t",
-        "lib/prod/main_prod.dart",
-        "android-arm",
-        "android-arm64",
-        "android-x64"
-      ],
+      "args": ["test"],
       "group": {
-        "kind": "build"
-      }
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$dart-flutter"
     },
+
     {
-      "label": "Generate Model Files",
-      "type": "shell",
-      "command": "dart",
-      "args": [
-        "run",
-        "build_runner",
-        "watch",
-        "--delete-conflicting-outputs"
-      ],
-      "group": {
-        "kind": "build"
-      }
-    },
-    {
-      "label": "Install Pods",
+      // Wipe build cache and re-fetch deps. Use when something is inexplicably broken.
+      "label": "flutter clean + pub get",
       "type": "shell",
       "command": "bash",
       "args": [
         "-c",
-        "cd ios && rm -rf Pods && rm -rf Podfile.lock && rm -rf .symlinks && pod install --repo-update && cd .."
+        "flutter clean && flutter pub get"
       ],
-      "group": {
-        "kind": "build"
-      }
+      "group": { "kind": "build" },
+      "problemMatcher": []
     },
+
+    // ── Centurion sibling repos — convenience tasks ────────────────────────
+    // These are the same commands the control center runs internally, but
+    // surfaced here so you can run a single step manually for debugging.
+
     {
-      "label": "Clear All Data",
+      "label": "[Web] yarn install",
       "type": "shell",
       "command": "bash",
-      "args": [
-        "-c",
-        "flutter clean && flutter pub cache clean && flutter pub get && cd ios && rm -rf Pods && rm -rf Podfile.lock && rm -rf .symlinks && pod install && cd .."
-      ],
-      "group": {
-        "kind": "build"
-      }
+      "args": ["-c", "cd ../crichq-webapp-nextjs && yarn install --frozen-lockfile"],
+      "group": { "kind": "build" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "[Web] yarn test (Playwright + Allure)",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "cd ../crichq-webapp-nextjs && yarn test"],
+      "group": { "kind": "test" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "[Mobile] npm ci",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "cd ../centurion-app-automation-tests-ts && npm ci"],
+      "group": { "kind": "build" },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "[Mobile] Start Appium",
+      "type": "shell",
+      "command": "appium",
+      "args": ["--port", "4723"],
+      "group": { "kind": "build" },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
     }
+
   ]
 }
